@@ -3,42 +3,107 @@
 // See the LICENSE file in the project root for more information.
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Spectre.Console;
 
 namespace aoc.solvers
 {
-    public class Problem1 : ProblemBase
+    public class Problem1 : ProblemBase, IFancyProblem
     {
         protected override async Task ExecuteCoreAsync(IAsyncEnumerable<string> data)
         {
-            string prev = null;
-            int count = 0;
-            int aggIncrease = 0;
-            int[] sums = { 99999,99999,99999 };
-            int i = 0;
-            await foreach (var item in data)
+            List<List<int>> elves = new List<List<int>>();
+            List<int> current = new List<int>();
+            await foreach (var num in data)
             {
-                int prevSum = sums.Sum();
-                sums[i % sums.Length] = int.Parse(item);
-                int newSum = sums.Sum();
-
-                if (newSum > prevSum)
-                    aggIncrease++;
-                if (prev != null)
+                if (string.IsNullOrEmpty(num) && current.Count > 0)
                 {
-                    if (int.Parse(item) > int.Parse(prev))
+                    elves.Add(current);
+                    current = new List<int>();
+                    continue;
+                }
+                
+                current.Add(int.Parse(num));
+            }
+
+            var sorted = elves.OrderByDescending(e => e.Sum()).ToList();
+            var sums = sorted.Select(e => e.Sum()).ToList();
+            Console.WriteLine($"Elf with most has {sums[0]}");
+            
+            Console.WriteLine($"Top 3 are {sums[0]}, {sums[1]}, and {sums[2]} = {sums.Take(3).Sum()}");
+        }
+
+        public async Task ExecuteFancyAsync(IAsyncEnumerable<string> data)
+        {
+            var chart = new BarChart()
+                .ShowValues();
+            await AnsiConsole.Live(chart).StartAsync(async ctx =>
+            {
+                Random r = new Random();
+                BarChartItem currentItem = null;
+                await foreach (var num in data)
+                {
+                    if (string.IsNullOrEmpty(num))
                     {
-                        count++;
+                        currentItem = null;
+                        continue;
                     }
+
+                    if (currentItem == null)
+                    {
+                        int c;
+                        do
+                        {
+                            c = r.Next(1, 231);
+                        } while (c is (>= 16 and <= 18));
+
+                        currentItem = new BarChartItem(Elfo.GetName(), 0, Color.FromInt32(c));
+                        chart.Data.Insert(0, currentItem);
+                    }
+
+                    var value = int.Parse(num);
+                    currentItem = new BarChartItem(currentItem.Label, currentItem.Value + value, currentItem.Color);
+                    chart.Data[0] = currentItem;
+                    ctx.Refresh();
                 }
 
-                prev = item;
-                i++;
-            }
-            Console.WriteLine($"{count} increases");
-            Console.WriteLine($"{aggIncrease} aggregate increases");
+                async Task<int> Partition(int low, int high)
+                {
+                    var p = chart.Data[high].Value;
+                    int i = low - 1;
+                    for (int j = low; j < high; j++)
+                    {
+                        if (chart.Data[j].Value >= p)
+                        {
+                            i++;
+                            (chart.Data[i], chart.Data[j]) = (chart.Data[j], chart.Data[i]);
+                            ctx.Refresh();
+                        }
+                    }
+
+                    i++;
+                    
+                    (chart.Data[i], chart.Data[high]) = (chart.Data[high], chart.Data[i]);
+                    ctx.Refresh();
+                    return i;
+                }
+
+                async Task QuickSort(int low, int high)
+                {
+                    if (low >= high || low < 0)
+                        return;
+
+                    var p = await Partition(low, high);
+
+                    await QuickSort(low, p - 1);
+                    await QuickSort(p + 1, high);
+                }
+                
+                await QuickSort(0, chart.Data.Count - 1);
+            });
         }
     }
 }

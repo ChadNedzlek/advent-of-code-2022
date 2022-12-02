@@ -15,7 +15,7 @@ using JetBrains.Annotations;
 
 namespace aoc
 {
-    public class Data
+    public static class Data
     {
         public static async IAsyncEnumerable<string> GetData(int problem, string type = "real")
         {
@@ -24,6 +24,16 @@ namespace aoc
             string line;
             while ((line = await reader.ReadLineAsync()) != null)
                 yield return line;
+        }
+
+        public static async IAsyncEnumerable<ValueTuple<T1, T2>> As<T1, T2>(
+            IAsyncEnumerable<string> data,
+            [RegexPattern] string pattern)
+        {
+            await foreach (string line in data)
+            {
+                yield return Parse<T1, T2>(line, pattern);
+            }
         }
 
         public static async IAsyncEnumerable<ValueTuple<T1, T2, T3, T4>> As<T1, T2, T3, T4>(

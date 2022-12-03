@@ -3,7 +3,6 @@
 // See the LICENSE file in the project root for more information.
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -61,22 +60,22 @@ namespace aoc.solvers
                         } while (c is (>= 16 and <= 18));
 
                         currentItem = new BarChartItem(Elfo.GetName(), 0, Color.FromInt32(c));
-                        chart.Data.Insert(0, currentItem);
+                        chart.Data.Add(currentItem);
                     }
 
                     var value = int.Parse(num);
                     currentItem = new BarChartItem(currentItem.Label, currentItem.Value + value, currentItem.Color);
-                    chart.Data[0] = currentItem;
+                    chart.Data[^1] = currentItem;
                     ctx.Refresh();
                 }
 
-                async Task<int> Partition(int low, int high)
+                int Partition(int low, int high)
                 {
                     var p = chart.Data[high].Value;
                     int i = low - 1;
                     for (int j = low; j < high; j++)
                     {
-                        if (chart.Data[j].Value >= p)
+                        if (chart.Data[j].Value <= p)
                         {
                             i++;
                             (chart.Data[i], chart.Data[j]) = (chart.Data[j], chart.Data[i]);
@@ -91,18 +90,24 @@ namespace aoc.solvers
                     return i;
                 }
 
-                async Task QuickSort(int low, int high)
+                void  QuickSort(int low, int high)
                 {
                     if (low >= high || low < 0)
                         return;
 
-                    var p = await Partition(low, high);
+                    var p = Partition(low, high);
 
-                    await QuickSort(low, p - 1);
-                    await QuickSort(p + 1, high);
+                    QuickSort(low, p - 1);
+                    QuickSort(p + 1, high);
                 }
                 
-                await QuickSort(0, chart.Data.Count - 1);
+                QuickSort(0, chart.Data.Count - 1);
+
+                await Task.Delay(2000);
+
+                var cc = AnsiConsole.Console;
+                cc.Clear();
+                cc.MarkupInterpolated($"Together [{chart.Data[^1].Color?.ToMarkup()}]{chart.Data[^1].Label}[/], [{chart.Data[^2].Color?.ToMarkup()}]{chart.Data[^2].Label}[/] and [{chart.Data[^3].Color?.ToMarkup()}]{chart.Data[^3].Label}[/], have {chart.Data[^1].Value + chart.Data[^2].Value + chart.Data[^3].Value} calories ");
             });
         }
     }

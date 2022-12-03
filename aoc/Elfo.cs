@@ -37,7 +37,7 @@ public static class Elfo
         "spirit", "star", "toy", "tree", "warmth", "wine", "wish", "wrap"
 };
 
-    private static readonly Random Random = new Random();
+    private static readonly Random Random = new Random(1);
 
     public static string GetName()
     {

@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using aoc.solvers;
 using Mono.Options;
+using Spectre.Console;
 
 namespace aoc
 {
@@ -15,10 +16,13 @@ namespace aoc
         static async Task Main(string[] args)
         {
             string dataType = "real";
+            bool menu = false;
             var os = new OptionSet
             {
-                { "example", v => dataType = "example" }
+                { "example", v => dataType = "example" },
+                { "prompt|p", v => menu = (v != null) },
             };
+            
             os.Parse(args);
             Dictionary<int, ProblemBase> problems = new Dictionary<int, ProblemBase>();
             
@@ -31,9 +35,21 @@ namespace aoc
                 }
             }
 
-            var problem = problems.OrderByDescending(p => p.Key).First().Value;
+            if (menu)
+            {
+                var problem = AnsiConsole.Prompt(
+                    new SelectionPrompt<int>()
+                        .Title("Which puzzle to execute?")
+                        .AddChoices(problems.Keys.OrderBy(i => i)));
 
-            await problem.ExecuteAsync(dataType);
+                await problems[problem].ExecuteAsync(dataType);
+            }
+            else{
+
+                var problem = problems.MaxBy(p => p.Key).Value;
+
+                await problem.ExecuteAsync(dataType);
+            }
         }
     }
 }

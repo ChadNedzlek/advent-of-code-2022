@@ -21,6 +21,7 @@ namespace aoc
             {
                 { "example", v => dataType = "example" },
                 { "prompt|p", v => menu = (v != null) },
+                { "verbose|v", v => Helpers.IncludeVerboseOutput = (v != null) },
             };
             
             os.Parse(args);

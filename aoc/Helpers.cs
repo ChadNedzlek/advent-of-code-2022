@@ -73,5 +73,35 @@ namespace aoc
         {
             AddOrUpdate(dict, key, amount, i => i + amount);
         }
+
+        public static IEnumerable<IEnumerable<T>> Chunks<T>(IEnumerable<T> source, int chunkSize)
+        {
+            using var enumerator = source.GetEnumerator();
+            IEnumerable<T> Inner()
+            {
+                bool needToRead = false;
+                for (int i = 0; i < chunkSize; i++)
+                {
+                    if (needToRead && !enumerator.MoveNext()) yield break;
+
+                    yield return enumerator.Current;
+
+                    needToRead = true;
+                }
+            }
+
+            while (enumerator.MoveNext())
+            {
+                yield return Inner();
+            }
+        }
+
+        public static bool IncludeVerboseOutput { get; set; }
+
+        public static void VerboseLine(string line)
+        {
+            if (IncludeVerboseOutput)
+                Console.WriteLine(line);
+        }
     }
 }

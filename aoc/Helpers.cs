@@ -42,6 +42,12 @@ namespace aoc
             return Enumerable.Repeat(value, 1);
         }
 
+        public static IEnumerable<int> AsEnumerable(this Range range)
+        {
+            var (start, count) = range.GetOffsetAndLength(int.MaxValue);
+            return Enumerable.Range(start, count);
+        }
+
         public static void AddOrUpdate<TKey, TValue>(
             this IDictionary<TKey, TValue> dict,
             TKey key,

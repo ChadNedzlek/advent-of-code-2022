@@ -15,7 +15,7 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
             Console.WriteLine();
 
             var linq = WithLinq(await data.ToListAsync());
-            var query = WithLinq(await data.ToListAsync());
+            var query = WithQuerySyntax(await data.ToListAsync());
             
             Console.WriteLine($"Compartment with LINQ check: {compartmentOverlap == linq.compartmentOverlap}");
             Console.WriteLine($"Badge with LINQ check: {badgeOverlap == linq.badgeOverlap}");

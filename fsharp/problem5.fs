@@ -45,33 +45,34 @@
         let repl (index:int) (value:'a) (data:list<'a>) =
             data |> List.mapi (fun i x -> if i = index then value else x)
 
-        // Move "count" items from f to t and return the 
-        let move (count:int) (f:list<'a>, t:list<'a>) =
-            (f[..^count], t @ f[^(count-1)..])
+        let move (count:int) (fromStack:list<'a>, toStack:list<'a>) =
+            (fromStack[..^count], toStack @ fromStack[^(count-1)..])
 
-        let revMove (count:int) (f:list<'a>, t:list<'a>) =
-            (f[..^count], t @ (f[^(count-1)..] |> List.rev))
+        let revMove (count:int) (fromStack:list<'a>, toStack:list<'a>) =
+            (fromStack[..^count], toStack @ (fromStack[^(count-1)..] |> List.rev))
 
         // Parse the instruction and return a tuple of (count, fromIndex, toIndex)
         let parseLine (ins:string) =
             let m = Regex.Match(ins, @"move (\d+) from (\d+) to (\d+)")
             ((int m.Groups[1].Value), (int m.Groups[2].Value) - 1, (int m.Groups[3].Value) - 1)
             
-        // Build the transformation of applying the "go" method for the instruction
+        // Build the single step transformation of applying the "handleInstruction" method for the instruction
         let parseInstruction (handleInstruction: int -> int -> int -> 'a) (ins:string) =
             (parseLine ins) |||> handleInstruction
             
-        // Apply a single step of the "go" method to the stacks
-        let step handleInstruction (count:int) (iFrom:int) (iTo:int) (stacks:list<list<'a>>) =
-            let (newFrom, newTo) = handleInstruction count (stacks[iFrom], stacks[iTo])
+        // Run a single move action using either move or revMove
+        let applyMove moveHandler (count:int) (iFrom:int) (iTo:int) (stacks:list<list<'a>>) =
+            let (newFrom, newTo) = moveHandler count (stacks[iFrom], stacks[iTo])
             stacks |> repl iFrom newFrom |> repl iTo newTo
             
         let formatOutput stacks = stacks |> List.map List.last |> List.map string |> String.concat ""
 
-        let part1Handler = (flip (parseInstruction (step revMove)))
+        // The "flip" here is to avoid having to write a bunch of anonymous lambdas just to run
+        // i |> List.fold (fun a i -> parseInstruction (applyMove revMove) i a) data
+        let part1Handler = (flip (parseInstruction (applyMove revMove)))
         let endState1 = instructions |> List.fold part1Handler data        
         printfn $"%A{endState1 |> formatOutput}"
 
-        let part1Handler = (flip (parseInstruction (step move)))
+        let part1Handler = (flip (parseInstruction (applyMove move)))
         let endState2 = instructions |> List.fold part1Handler data            
         printfn $"%A{endState2 |> formatOutput}"

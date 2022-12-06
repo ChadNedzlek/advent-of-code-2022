@@ -19,10 +19,11 @@ let main args =
     
     let index = int highestModule.Name[7..]
     
+    let problemType = if Array.contains "--example" args then "example" else "real"     
     
-    let targetFile = Path.Combine(dataRoot, $@"data-%02d{index}-real.txt")
+    let targetFile = Path.Combine(dataRoot, $@"data-%02d{index}-{problemType}.txt")
 
-    let lines = System.IO.File.ReadLines(targetFile) |> Seq.cache
+    let lines = File.ReadLines(targetFile) |> Seq.cache
     
     let targetMethod = highestModule.GetMethod("execute")
     

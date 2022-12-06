@@ -4,19 +4,32 @@
 
     open System.Text.RegularExpressions
     
-    let execute(data) =
-        let data = [
-            ['Z';'N'];
-            ['M';'C';'D'];
-            ['P'];
-        ]
-
-        let instructions = [
-            "move 1 from 2 to 1"
-            "move 3 from 1 to 3"
-            "move 2 from 2 to 1"
-            "move 1 from 1 to 2"
-        ]
+    let execute(lines) =
+        let emptyList _ = []
+        
+        let rec parseAbsurdInput (data:list<string>) (stacks:list<list<char>>) =
+            match data with
+            | _ :: "" :: rest -> (stacks, rest)
+            | line :: rest ->
+                let (next, instructions) = parseAbsurdInput rest stacks
+                let layer =
+                    seq{1..4..(String.length line)}
+                    |> Seq.map (fun i -> line[i])
+                let targetSize = (Seq.length layer) - (List.length next)
+                let s =
+                    (next @ (List.init targetSize emptyList))
+                    |> List.mapi (
+                        fun i x ->
+                            if line.Length > i*4 then
+                                let c = line[i*4+1]
+                                if c = ' ' then x else x @ [c]
+                            else
+                                x 
+                        )
+                (s, instructions)
+        
+        let (data, instructions) = parseAbsurdInput (List.ofSeq lines) []
+            
 
         let repl (index:int) (value:'a) (data:list<'a>) =
             data |> List.mapi (fun i x -> if i = index then value else x)

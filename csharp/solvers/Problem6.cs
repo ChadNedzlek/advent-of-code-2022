@@ -16,7 +16,9 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
             await foreach (var line in data)
             {
                 Run(line, 4);
+                RunLinq(line, 4);
                 Run(line, 14);
+                RunLinq(line, 14);
             }
         }
 
@@ -38,6 +40,19 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
                     return;
                 }
             }
+        }
+        
+        private void RunLinq(string line, int size)
+        {
+            var headerStart = line
+                .Select((_, i) => line.Substring(i, size))
+                .Select(s => s.Distinct())
+                .Select(s => s.Count())
+                .FindIndex(count => count == size);
+
+            var packetStart = headerStart + size;
+            
+            Console.WriteLine($"Found {size} marker at {packetStart} with LINQ");
         }
     }
 }

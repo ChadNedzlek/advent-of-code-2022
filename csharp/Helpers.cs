@@ -117,5 +117,18 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp
             if (IncludeVerboseOutput)
                 Console.WriteLine(line);
         }
+
+        public static int FindIndex<T>(this IEnumerable<T> source, Predicate<T> predicate)
+        {
+            var i = 0;
+            foreach (var item in source)
+            {
+                if (predicate(item))
+                    return i;
+                i++;
+            }
+
+            return -1;
+        }
     }
 }

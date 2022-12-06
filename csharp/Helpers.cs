@@ -72,6 +72,14 @@ namespace aoc
             AddOrUpdate(dict, key, amount, i => i + amount);
         }
         
+        public static void Decrement<TKey>(
+            this IDictionary<TKey, int> dict,
+            TKey key,
+            int amount = 1)
+        {
+            Increment(dict, key, -amount);
+        }
+        
         public static void Increment<TKey>(
             this IDictionary<TKey, long> dict,
             TKey key,

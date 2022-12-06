@@ -1,8 +1,4 @@
-﻿module AocF.problem4
-
-    open System
-    open System.Collections.Generic
-    
+﻿module AocF.problem4    
     let tup2 (arr:array<string>) =
         match arr with
         | [|a;b|] -> (a,b)

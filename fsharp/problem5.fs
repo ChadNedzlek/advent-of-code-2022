@@ -1,7 +1,4 @@
 ﻿module AocF.problem5
-
-    // For more information see https://aka.ms/fsharp-console-apps
-
     open System.Text.RegularExpressions
     
     let execute(lines) =

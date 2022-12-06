@@ -1,5 +1,4 @@
-﻿
-module AocF.problem3
+﻿module AocF.problem3
     open System.Linq
 
     let bag (line:string) =

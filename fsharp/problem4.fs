@@ -1,4 +1,4 @@
-﻿module AocF.problem4    
+﻿module ChadNedzlek.AdventOfCode.Y2022.FSharp.problem4    
     let tup2 (arr:array<string>) =
         match arr with
         | [|a;b|] -> (a,b)

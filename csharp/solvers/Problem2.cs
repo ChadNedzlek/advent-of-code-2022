@@ -3,14 +3,10 @@
 // See the LICENSE file in the project root for more information.
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
 using System.Threading.Tasks;
-using Spectre.Console;
 
-namespace aoc.solvers
+namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
 {
     public class Problem2 : ProblemBase
     {

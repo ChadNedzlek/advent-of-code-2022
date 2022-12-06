@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace aoc.solvers
+namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
 {
     public class Problem4 : ProblemBase
     {

@@ -4,16 +4,12 @@
 
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Reflection;
-using System.Resources;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices.ComTypes;
 using System.Text.RegularExpressions;
 using JetBrains.Annotations;
 
-namespace aoc
+namespace ChadNedzlek.AdventOfCode.Y2022.CSharp
 {
     public static class Data
     {

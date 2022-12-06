@@ -1,5 +1,1 @@
-﻿module AocF.helpers
-
-
-
-printf $"{System.Reflection.Assembly.GetEntryAssembly().FullName}";
+﻿module ChadNedzlek.AdventOfCode.Y2022.FSharp.helpers

@@ -3,13 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
-using System.Threading;
 using System.Threading.Tasks;
-using aoc.solvers;
+using ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers;
 using Mono.Options;
 using Spectre.Console;
 
-namespace aoc
+namespace ChadNedzlek.AdventOfCode.Y2022.CSharp
 {
     class Program
     {

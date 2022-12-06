@@ -1,4 +1,4 @@
-﻿module AocF.problem3
+﻿module ChadNedzlek.AdventOfCode.Y2022.FSharp.problem3
     open System.Linq
 
     let bag (line:string) =

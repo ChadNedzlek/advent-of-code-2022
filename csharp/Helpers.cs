@@ -6,7 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace aoc
+namespace ChadNedzlek.AdventOfCode.Y2022.CSharp
 {
     public static class Helpers
     {

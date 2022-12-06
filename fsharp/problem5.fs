@@ -1,4 +1,4 @@
-﻿module AocF.problem5
+﻿module ChadNedzlek.AdventOfCode.Y2022.FSharp.problem5
     open System.Text.RegularExpressions
     
     let execute(lines) =

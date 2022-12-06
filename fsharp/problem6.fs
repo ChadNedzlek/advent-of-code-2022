@@ -1,4 +1,4 @@
-﻿module AocF.problem6
+﻿module ChadNedzlek.AdventOfCode.Y2022.FSharp.problem6
     
     let execute(lines) =
         let go (length:int) (line:string) =

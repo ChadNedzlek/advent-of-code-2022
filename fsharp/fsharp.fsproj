@@ -5,6 +5,7 @@
         <TargetFramework>net6.0</TargetFramework>
         <NoWarn>FS0025</NoWarn>
         <LangVersion>preview</LangVersion>
+        <RootNamespace>ChadNedzlek.AdventOfCode.Y2022.FSharp</RootNamespace>
     </PropertyGroup>
     
     <ItemGroup>

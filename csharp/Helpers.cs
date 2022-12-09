@@ -14,6 +14,15 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp
             b = arr[1];
         }
 
+        public static IEnumerable<T> AsEnumerable<T>(this T[,] arr)
+        {
+            for (int i0 = 0; i0 < arr.GetLength(0); i0++)
+            for (int i1 = 0; i1 < arr.GetLength(1); i1++)
+            {
+                yield return arr[i0, i1];
+            }
+        }
+
         public static void For<T>(this T[,] arr, Action<T[,], int, int, T> act)
         {
             for (int i0 = 0; i0 < arr.GetLength(0); i0++)
@@ -112,6 +121,12 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp
         {
             if (IncludeVerboseOutput)
                 Console.WriteLine(line);
+        }
+
+        public static void IfVerbose(Action callback)
+        {
+            if (IncludeVerboseOutput)
+                callback();
         }
 
         public static int FindIndex<T>(this IEnumerable<T> source, Predicate<T> predicate)

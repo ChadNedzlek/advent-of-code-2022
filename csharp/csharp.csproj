@@ -3,7 +3,7 @@
     <PropertyGroup>
         <OutputType>Exe</OutputType>
         <TargetFramework>net6.0</TargetFramework>
-        <NoWarn>CS8509</NoWarn>
+        <NoWarn>CS8509;CS1998</NoWarn>
         <RootNamespace>ChadNedzlek.AdventOfCode.Y2022.CSharp</RootNamespace>
     </PropertyGroup>
 

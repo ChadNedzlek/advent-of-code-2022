@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using ChadNedzlek.AdventOfCode.DataModule;
 using JetBrains.Annotations;
 
 namespace ChadNedzlek.AdventOfCode.Y2022.CSharp
@@ -11,11 +12,23 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp
     {
         public static async IAsyncEnumerable<string> GetData(int problem, string type = "real")
         {
-            string root = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
-            using var reader = new StreamReader(Path.Combine(root, "data", $"data-{problem:00}-{type}.txt"));
-            string line;
-            while ((line = await reader.ReadLineAsync()) != null)
+            StreamReader reader;
+            if (type == "real")
+            {
+                var data = new AocData();
+                reader = await data.GetDataAsync(2022, problem);
+            }
+            else
+            {
+
+                string root = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
+                reader = new StreamReader(Path.Combine(root, "data", $"data-{problem:00}-{type}.txt"));
+            }
+
+            while (await reader.ReadLineAsync() is { } line)
                 yield return line;
+            
+            reader.Dispose();
         }
 
         public static async IAsyncEnumerable<ValueTuple<T1, T2>> As<T1, T2>(

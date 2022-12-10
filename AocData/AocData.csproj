@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <RootNamespace>ChadNedzlek.AdventOfCode.DataModule</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Microsoft.Playwright" Version="1.28.0" />
+      <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="7.0.0" />
+    </ItemGroup>
+
+</Project>

@@ -21,4 +21,8 @@
       <PackageReference Include="System.Linq.Async" Version="5.0.0" />
     </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\AocData\AocData.csproj" />
+    </ItemGroup>
+
 </Project>

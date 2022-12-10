@@ -15,8 +15,8 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp
             StreamReader reader;
             if (type == "real")
             {
-                var data = new AocData();
-                reader = await data.GetDataAsync(2022, problem);
+                var data = new AocData(2022);
+                reader = await data.GetDataAsync(problem);
             }
             else
             {

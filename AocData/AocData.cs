@@ -15,19 +15,26 @@ namespace ChadNedzlek.AdventOfCode.DataModule
 {
     public class AocData
     {
+        private readonly int _year;
+        
         private static readonly string RootFolder = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "ChadNedzlek",
             "AocData");
-        
-        public async Task<StreamReader> GetDataAsync(int year, int day)
+
+        public AocData(int year)
         {
-            string dir = Path.Combine(RootFolder, year.ToString());
+            _year = year;
+        }
+
+        public async Task<StreamReader> GetDataAsync(int day)
+        {
+            string dir = Path.Combine(RootFolder, _year.ToString());
             Directory.CreateDirectory(dir);
             string targetPath = Path.Combine(dir, $"day-{day:D2}-input.txt");
             if (!File.Exists(targetPath))
             {
-                string token = await GetAccessTokenAsync(year);
+                string token = await GetAccessTokenAsync();
                 var cookies = new CookieContainer();
                 using var http = new HttpClient(new HttpClientHandler { CookieContainer = cookies });
                 if (token != null)
@@ -36,7 +43,7 @@ namespace ChadNedzlek.AdventOfCode.DataModule
                 }
 
                 await using var httpStream =
-                    await http.GetStreamAsync($"https://adventofcode.com/{year}/day/{day}/input");
+                    await http.GetStreamAsync($"https://adventofcode.com/{_year}/day/{day}/input");
                 await using var cacheStream = File.Create(targetPath);
                 await httpStream.CopyToAsync(cacheStream);
             }
@@ -44,9 +51,9 @@ namespace ChadNedzlek.AdventOfCode.DataModule
             return File.OpenText(targetPath);
         }
 
-        private async Task<string> GetAccessTokenAsync(int year)
+        private async Task<string> GetAccessTokenAsync()
         {
-            var metadataPath = Path.Combine(RootFolder, year.ToString(), "metadata.json");
+            var metadataPath = Path.Combine(RootFolder, _year.ToString(), "metadata.json");
             Metadata metadata = new Metadata();
             if (File.Exists(metadataPath))
             {

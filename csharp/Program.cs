@@ -22,7 +22,7 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp
                 { "prompt|p", v => menu = (v != null) },
                 { "verbose|v", v => Helpers.IncludeVerboseOutput = (v != null) },
             };
-            
+
             os.Parse(args);
             Dictionary<int, ProblemBase> problems = new Dictionary<int, ProblemBase>();
             

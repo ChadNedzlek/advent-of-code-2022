@@ -206,7 +206,6 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
                     return new DelayInstruction();
                 case "addx":
                     return new AddXInstruction(int.Parse(parts[1]));
-                    break;
                 default:
                     throw new ArgumentOutOfRangeException("parts[0]");
             }

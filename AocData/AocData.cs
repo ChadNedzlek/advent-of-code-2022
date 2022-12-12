@@ -2,6 +2,7 @@
 
 using System;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Security.Cryptography;
@@ -68,10 +69,10 @@ namespace ChadNedzlek.AdventOfCode.DataModule
                 }
             }
 
-            string returnValue = null;
+            string returnValue;
             if (!string.IsNullOrEmpty(metadata.AccessToken))
             {
-                if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+                if (OperatingSystem.IsWindows())
                 {
                     returnValue = Encoding.UTF8.GetString(ProtectedData.Unprotect(
                         Convert.FromBase64String(metadata.AccessToken), null, DataProtectionScope.CurrentUser));
@@ -86,18 +87,10 @@ namespace ChadNedzlek.AdventOfCode.DataModule
                 async Task<string> TryGetCookie(IPage p)
                 {
                     var all = await p.Context.CookiesAsync();
-                    foreach (var cookie in all)
-                    {
-                        if (cookie.Name == "session")
-                        {
-                            return cookie.Value;
-                        }
-                    }
-
-                    return null;
+                    return all.FirstOrDefault(c => c.Name == "session")?.Value;
                 }
 
-                Program.Main(new[] { "install" });
+                Program.Main(new[] { "install", "chromium" });
                 var pl = await Playwright.CreateAsync();
                 var ch = await pl.Chromium.LaunchAsync(new BrowserTypeLaunchOptions{Headless = false});
                 var page = await ch.NewPageAsync();
@@ -119,7 +112,7 @@ namespace ChadNedzlek.AdventOfCode.DataModule
                 }
 
                 returnValue = cookie;
-                if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+                if (OperatingSystem.IsWindows())
                 {
                     metadata.AccessToken = Convert.ToBase64String(ProtectedData.Protect(Encoding.UTF8.GetBytes(cookie),
                         null, DataProtectionScope.CurrentUser));

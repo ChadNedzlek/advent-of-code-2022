@@ -117,6 +117,12 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp
 
         public static bool IncludeVerboseOutput { get; set; }
 
+        public static void Verbose(string text)
+        {
+            if (IncludeVerboseOutput)
+                Console.Write(text);
+        }
+
         public static void VerboseLine(string line)
         {
             if (IncludeVerboseOutput)

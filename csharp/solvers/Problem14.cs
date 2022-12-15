@@ -9,10 +9,26 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
     {
         protected override async Task ExecuteCoreAsync(IAsyncEnumerable<string> data)
         {
-            int buffer = 300;
+            int buffer = 10;
             var asList = await data.ToListAsync();
+            while (true)
+            {
+                try
+                {
+                    await Try(asList, buffer);
+                    break;
+                }
+                catch (IndexOutOfRangeException)
+                {
+                    buffer++;
+                }
+            }
+        }
+
+        private static async Task Try(List<string> data, int buffer)
+        {
             int minX = int.MaxValue, minY = 0, maxX = 0, maxY = 0;
-            foreach(var line in asList)
+            foreach (var line in data)
             {
                 var parts = line
                     .Split('>')
@@ -30,10 +46,11 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
                     maxY = Math.Max(maxY, point[1]);
                 }
             }
-            
-            char [,] board = (char[,])Array.CreateInstance(typeof(char), new[] { maxX - minX + 2*buffer, maxY - minY + 2*buffer },
-                new[] { minX - buffer, minY - buffer });
-            foreach(var line in asList)
+
+            char[,] board = (char[,])Array.CreateInstance(typeof(char),
+                new[] { maxX - minX + 2 * buffer, maxY + 3},
+                new[] { minX - buffer, 0});
+            foreach (var line in data)
             {
                 var parts = line
                     .Split('>')
@@ -43,7 +60,7 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
                         .Select(int.Parse)
                         .ToArray()
                     )
-                    .Select(a => (x:a[0], y:a[1]))
+                    .Select(a => (x: a[0], y: a[1]))
                     .ToArray();
                 for (var i = 1; i < parts.Length; i++)
                 {
@@ -54,6 +71,7 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
                         board[pos.x, pos.y] = '#';
                         pos = (pos.x + Math.Sign(end.x - pos.x), pos.y + Math.Sign(end.y - pos.y));
                     }
+
                     board[pos.x, pos.y] = '#';
                 }
 
@@ -78,9 +96,6 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
                         // Lost time to go
                         goto endLoop;
                     }
-
-                    try
-                    {
                         if (board[x, y + 1] == 0)
                         {
                             y++;
@@ -100,18 +115,9 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
                             y++;
                             continue;
                         }
-                    }
-                    catch (IndexOutOfRangeException)
-                    {
-                        Console.SetCursorPosition(0,0);
-                        Console.ForegroundColor = ConsoleColor.Red;
-                        Helpers.IncludeVerboseOutput = true;
-                        DrawBoard(board);
-                        return;
-                    }
 
                     board[x, y] = '@';
-                    Console.SetCursorPosition(0,0);
+                    Console.SetCursorPosition(0, 0);
                     board[x, y] = 'o';
                     DrawBoard(board);
                     count++;
@@ -123,22 +129,25 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
                     break;
                 }
             }
+
             endLoop:
-            Helpers.VerboseLine(""); 
+            Helpers.VerboseLine("");
             Helpers.VerboseLine("After");
             Helpers.VerboseLine("");
+            Helpers.IncludeVerboseOutput = true;
             DrawBoard(board);
-            
+
             Console.WriteLine($"Dropped {count} sand");
+            Console.ReadLine();
         }
 
         private static void DrawBoard(char[,] board)
         {
             if (!Helpers.IncludeVerboseOutput)
                 return;
-            for (var index0 = board.GetLowerBound(0); index0 <= board.GetUpperBound(0); index0++)
+            for (var index1 = board.GetLowerBound(1); index1 <= board.GetUpperBound(1); index1++)
             {
-                for (var index1 = board.GetLowerBound(1); index1 <= board.GetUpperBound(1); index1++)
+                for (var index0 = board.GetLowerBound(0); index0 <= board.GetUpperBound(0); index0++)
                 {
                     Helpers.Verbose(board[index0, index1].ToString());
                 }

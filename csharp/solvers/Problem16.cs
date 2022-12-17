@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -31,7 +30,7 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
             {
                 for (byte id = 0; id < 64; id++)
                 {
-                    if(Contains(new NodeId(id)))
+                    if (Contains(new NodeId(id)))
                     {
                         yield return new NodeId(id);
                     }
@@ -50,40 +49,10 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
 
             public static NodeSet From(params NodeId[] nodes) => From((IEnumerable<NodeId>)nodes);
             public static NodeSet Empty => new(0);
-        }
 
-        public readonly struct TwoNodes
-        {
-            public TwoNodes(NodeId a, NodeId b)
+            public NodeSet Add(NodeSet other)
             {
-                if (a.Value > b.Value)
-                    (b, a) = (a, b);
-                A = a;
-                B = b;
-            }
-
-            public NodeId A { get; }
-            public NodeId B { get; }
-
-            public void Deconstruct(out NodeId a, out NodeId b)
-            {
-                a = A;
-                b = B;
-            }
-
-            public bool Equals(TwoNodes other)
-            {
-                return A.Equals(other.A) && B.Equals(other.B);
-            }
-
-            public override bool Equals(object obj)
-            {
-                return obj is TwoNodes other && Equals(other);
-            }
-
-            public override int GetHashCode()
-            {
-                return HashCode.Combine(A, B);
+                return new NodeSet(Value | other.Value);
             }
         }
 
@@ -107,8 +76,6 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
 
         public readonly record struct NodeDescriptor(NodeId Id, int FlowRate, NodeSet Edges);
 
-        public readonly record struct HardState(TwoNodes ActorLocations, NodeSet OpenedNodes);
-
         public readonly record struct Score(int Remaining, int TotalPressure)
         {
             public bool IsBetterThan(Score other)
@@ -118,37 +85,23 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
 
                 if (TotalPressure > other.TotalPressure)
                     return true;
-                
+
                 return false;
             }
         }
-        
-        public record class HardPath(
-            TwoNodes Actors,
-            NodeSet OpenedNodes,
-            int Available,
-            int Remaining,
-            int TotalPressure,
-            HardPath Previous)
-        {
-            public (HardState State, Score Score) GetStateAndScore()
-            {
-                return (new HardState(Actors, OpenedNodes), new Score(Remaining, TotalPressure));
-            }
-        }
 
-        public readonly record struct EasyState(NodeId Location, NodeSet OpenedNodes);
+        public readonly record struct ActorState(NodeId Location, NodeSet OpenedNodes);
+
         public record class EasyPath(
             NodeId Location,
             NodeSet OpenedNodes,
-            NodeSet Visited,
             int Remaining,
             int TotalPressure,
             EasyPath Previous)
         {
-            public (EasyState State, Score Score) GetStateAndScore()
+            public (ActorState State, Score Score) GetStateAndScore()
             {
-                return (new EasyState(Location, OpenedNodes), new Score(Remaining, TotalPressure));
+                return (new ActorState(Location, OpenedNodes), new Score(Remaining, TotalPressure));
             }
         }
 
@@ -164,9 +117,24 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
                 nodes.Add(nodeId, new NodeDescriptor(nodeId, flowRate, edgeList));
             }
 
+            // We are going to be travelling around _a lot_
+            // It'll be WAY faster if we can just jump to any given node, so lets precalculate all the distances
+            var distances = BuildDistanceMatrix(nodes, mapping);
+
+            Dictionary<NodeId, int> flow = nodes.Values
+                .Where(n => n.FlowRate != 0)
+                .ToDictionary(n => n.Id, n => n.FlowRate);
+            Part1(mapping, distances, flow);
+            Part2(mapping, distances, flow);
+        }
+
+        /// <summary>
+        /// Create a compressed distance matrix, that marks the distance from any valve node to any other valve node
+        /// </summary>
+        /// <returns>A structure that value[fromId][toId] is the cost to travel from fromId to toId</returns>
+        private static Dictionary<NodeId, Dictionary<NodeId, int>> BuildDistanceMatrix(Dictionary<NodeId, NodeDescriptor> nodes, Mapping mapping)
+        {
             Dictionary<NodeId, Dictionary<NodeId, int>> distances = new();
-
-
             foreach (var a in nodes.Values)
             {
                 distances.Add(a.Id, a.Edges.Enumerate().ToDictionary(e => e, _ => 1));
@@ -187,8 +155,7 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
                             if (a.Id == i.Id || b.Id == i.Id)
                                 continue;
 
-                            int aToB;
-                            if (!distances[a.Id].TryGetValue(b.Id, out aToB))
+                            if (!distances[a.Id].TryGetValue(b.Id, out int aToB))
                             {
                                 aToB = int.MaxValue;
                             }
@@ -197,7 +164,7 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
                                 distances[i.Id].TryGetValue(b.Id, out var iToB) &&
                                 (aToI + iToB < aToB))
                             {
-                                distances[a.Id][b.Id] = aToB;
+                                distances[a.Id][b.Id] = aToI + iToB;
                                 changed = true;
                             }
                         }
@@ -205,128 +172,137 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
                 }
             } while (changed);
 
-            Part1(mapping, nodes);
-        }
-
-        public class Inverted : IComparer<int>
-        {
-            private readonly Comparer<int> _comparer  = Comparer<int>.Default;
-
-            public int Compare(int x, int y)
+            // We aren't going to ever go to a node with no valve, since we saved all the direct paths
+            // so let's just remove all the pointless nodes from the from sections
+            foreach (var empty in nodes.Values.Where(n => n.FlowRate == 0))
             {
-                return _comparer.Compare(y, x);
-            }
-        }
-
-        public record struct GraphNode(NodeId Id, ImmutableDictionary<NodeId, int> Edges);
-
-        private static void Part1(Mapping mapping, Dictionary<NodeId, NodeDescriptor> nodes)
-        {
-            EasyPath GetNextStep(NodeId start, int remaining, NodeSet opened)
-            {
-                Queue<EasyPath> pending = new Queue<EasyPath>();
-                Dictionary<EasyState, Score> history = new();
-
-                EasyPath best = new EasyPath(start, opened, new NodeSet().Add(start), remaining, 0, null);
-                
-                void TryEnqueue(EasyPath path)
+                foreach (var other in distances.Values)
                 {
-                    if (path.Remaining == 0)
-                    {
-                        return;
-                    }
-
-                    if (best.TotalPressure < path.TotalPressure)
-                    {
-                        best = path;
-                    }
-
-                    var (state, score) = path.GetStateAndScore();
-
-                    if (history.TryGetValue(state, out var xScore) && ! score.IsBetterThan(xScore))
-                    {
-                        return;
-                    }
-
-                    history[state] = score;
-                    pending.Enqueue(path);
+                    other.Remove(empty.Id);
                 }
+            }
+            
+            // Since we aren't ever going to go TO a pointless node, we won't ever have to START their either
+            // so we can remove those nodes too (though we need to keep "AA", since we start there)
+            foreach (var empty in nodes.Values.Where(n => n.FlowRate == 0 && n.Id != mapping.GetNodeId("AA")))
+            {
+                distances.Remove(empty.Id);
+            }
 
-                pending.Enqueue(best);
-                while (pending.Count > 0)
+            return distances;
+        }
+
+        private static void Part1(Mapping mapping,
+            Dictionary<NodeId, Dictionary<NodeId, int>> distanceMatrix,
+            Dictionary<NodeId, int> flowRates)
+        {
+            var solve = Solve(mapping.GetNodeId("AA"), 30, NodeSet.Empty, distanceMatrix, flowRates);
+            Console.WriteLine($"Single actor relieves {solve.TotalPressure}");
+        }
+
+        private static void Part2(Mapping mapping,
+            Dictionary<NodeId, Dictionary<NodeId, int>> distanceMatrix,
+            Dictionary<NodeId, int> flowRates)
+        {
+            // We are going to try every possible division of labor (which things go to the elephant and which to me)
+            // And just solve each person dealing with those halves off limits (or "opened" already... by the other actor)
+            // And whichever is highest is best
+            // Since we can fully solve in ~5ms, doing it all 32k times shouldn't be that hard.
+            var allNodeSet = flowRates.Keys.Aggregate(NodeSet.Empty, (s, n) => s.Add(n));
+            var nodeList = allNodeSet.Enumerate().ToList();
+            int end = 1 << nodeList.Count;
+            int bestPressure = 0;
+            EasyPath a = null, b = null;
+            for (int divvy = 0; divvy < end; divvy++)
+            {
+                NodeSet aSet = NodeSet.Empty;
+                NodeSet bSet = NodeSet.Empty;
+                for (int i = 0; i < nodeList.Count; i++)
                 {
-                    var path = pending.Dequeue();
-                    var desc = nodes[path.Location];
-                    if (!path.OpenedNodes.Contains(path.Location) && desc.FlowRate != 0)
+                    if (((1 << i) & divvy) == 0)
                     {
-                        // Try opening this one
-                        TryEnqueue(path with
-                        {
-                            Remaining = path.Remaining - 1,
-                            OpenedNodes = path.OpenedNodes.Add(path.Location),
-                            TotalPressure = path.TotalPressure + desc.FlowRate * (path.Remaining - 1),
-                            Visited = new NodeSet().Add(path.Location),
-                            Previous = path,
-                        });
+                        aSet = aSet.Add(nodeList[i]);
                     }
-
-                    foreach (var edge in desc.Edges.Enumerate())
+                    else
                     {
-                        if (path.Visited.Contains(edge))
-                        {
-                            continue;
-                        }
-                        
-                        // Try moving to the edge
-                        TryEnqueue(path with{
-                            Location = edge,
-                            Remaining = path.Remaining - 1,
-                            Visited = path.Visited.Add(edge),
-                            Previous = path.Previous,
-                        });
+                        bSet = bSet.Add(nodeList[i]);
                     }
                 }
 
-                return best;
+                var aSolve = Solve(mapping.GetNodeId("AA"), 26, aSet, distanceMatrix, flowRates);
+                var bSolve = Solve(mapping.GetNodeId("AA"), 26, bSet, distanceMatrix, flowRates);
+                int totalPressure = aSolve.TotalPressure + bSolve.TotalPressure;
+                Helpers.VerboseLine($"  Solved with {aSolve.TotalPressure} + {bSolve.TotalPressure} = {totalPressure}");
+                if (totalPressure > bestPressure)
+                {
+                    bestPressure = totalPressure;
+                    a = aSolve;
+                    b = bSolve;
+                }
             }
+            Console.WriteLine($"Best with {a.TotalPressure} + {b.TotalPressure} = {bestPressure}");
+        }
 
-            NodeSet o = NodeSet.Empty;
-            int duration = 26;
-            int count = 2;
-            var aa = mapping.GetNodeId("AA");
-            PriorityQueue<(NodeId location, string name), int> position = new (new Inverted());
-            //position.Enqueue((aa, "elephant"), 26);
-            for (int i = 0; i < count; i++)
+        private static EasyPath Solve(NodeId start,
+            int remaining,
+            NodeSet opened,
+            Dictionary<NodeId, Dictionary<NodeId, int>> distanceMatrix,
+            Dictionary<NodeId, int> flowRates)
+        {
+            Queue<EasyPath> pending = new Queue<EasyPath>();
+            Dictionary<ActorState, Score> history = new();
+
+            EasyPath best = new EasyPath(start, opened, remaining, 0, null);
+
+            void TryEnqueue(EasyPath path)
             {
-                position.Enqueue((aa, "agent " + (i+1)), duration);
+                if (path.Remaining <= 0)
+                {
+                    return;
+                }
+
+                if (best.TotalPressure < path.TotalPressure)
+                {
+                    best = path;
+                }
+
+                var (state, score) = path.GetStateAndScore();
+
+                if (history.TryGetValue(state, out var xScore) && !score.IsBetterThan(xScore))
+                {
+                    return;
+                }
+
+                history[state] = score;
+                pending.Enqueue(path);
             }
 
-            int totalPressure = 0;
-            while (position.TryDequeue(out var entry, out int remaining))
+            pending.Enqueue(best);
+            while (pending.Count > 0)
             {
-                var next = GetNextStep(entry.location, remaining, o);
-                if (next.TotalPressure == 0)
-                    continue;
-                var first = next;
-                while (first.Previous.Previous != null) first = first.Previous;
-                var prev = first.Previous;
-                Helpers.VerboseLine($"{entry.name} goes to {mapping.Name(prev.Location)} and relieves {first.TotalPressure} at {duration - prev.Remaining + 1}");
-                totalPressure += first.TotalPressure;
-                o = o.Add(prev.Location);
-                //DumpPath(next);
-                position.Enqueue((prev.Location, entry.name), prev.Remaining - 1);
+                var path = pending.Dequeue();
+                foreach ((var destinationId, int travelCost) in distanceMatrix[path.Location])
+                {
+                    if (path.OpenedNodes.Contains(destinationId))
+                    {
+                        continue;
+                    }
+
+                    // Try moving to the edge
+                    int remainingAfterOpen = path.Remaining - travelCost - 1;
+                    TryEnqueue(
+                        new EasyPath(
+                            Location: destinationId,
+                            Remaining: remainingAfterOpen,
+                            OpenedNodes: path.OpenedNodes.Add(destinationId),
+                            TotalPressure: path.TotalPressure + flowRates[destinationId] * remainingAfterOpen,
+                            Previous: path
+                        )
+                    );
+                }
             }
 
-            Console.WriteLine($"Total pressure relieved is {totalPressure}");
-
-            void DumpPath(EasyPath path)
-            {
-                if (path.Previous != null)
-                    DumpPath(path.Previous);
-
-                Console.WriteLine(
-                    $"{duration - path.Remaining} opens {mapping.Name(path.Location)}, opened nodes {string.Join(", ", path.OpenedNodes.Enumerate().Select(mapping.Name))} with {path.TotalPressure}");
-            }
+            return best;
         }
     }
 }

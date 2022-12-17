@@ -16,16 +16,18 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp
         {
             string dataType = "real";
             bool menu = false;
+            int puzzle = 0;
             var os = new OptionSet
             {
                 { "example", v => dataType = "example" },
                 { "prompt|p", v => menu = (v != null) },
                 { "verbose|v", v => Helpers.IncludeVerboseOutput = (v != null) },
+                { "puzzle=", v => puzzle = int.Parse(v) },
             };
 
             os.Parse(args);
             Dictionary<int, ProblemBase> problems = new Dictionary<int, ProblemBase>();
-            
+
             foreach (var type in Assembly.GetExecutingAssembly().GetTypes())
             {
                 var match = Regex.Match(type.Name, @"Problem(\d+)");
@@ -35,19 +37,25 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp
                 }
             }
 
+            if (puzzle != 0)
+            {
+                await problems[puzzle].ExecuteAsync(dataType);
+                return;
+            }
+
             if (menu)
             {
-                var problem = AnsiConsole.Prompt(
+                int problem = AnsiConsole.Prompt(
                     new SelectionPrompt<int>()
                         .Title("Which puzzle to execute?")
                         .AddChoices(problems.Keys.OrderBy(i => i)));
 
                 await problems[problem].ExecuteAsync(dataType);
+                return;
             }
-            else{
 
+            {
                 var problem = problems.MaxBy(p => p.Key).Value;
-
                 await problem.ExecuteAsync(dataType);
             }
         }

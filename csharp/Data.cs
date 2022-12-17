@@ -41,6 +41,16 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp
             }
         }
 
+        public static async IAsyncEnumerable<ValueTuple<T1, T2, T3>> As<T1, T2, T3>(
+            IAsyncEnumerable<string> data,
+            [RegexPattern] string pattern)
+        {
+            await foreach (string line in data)
+            {
+                yield return Parse<T1, T2, T3>(line, pattern);
+            }
+        }
+
         public static async IAsyncEnumerable<ValueTuple<T1, T2, T3, T4>> As<T1, T2, T3, T4>(
             IAsyncEnumerable<string> data,
             [RegexPattern] string pattern)
@@ -123,6 +133,8 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp
         public static (T1, T2, T3) Parse<T1, T2, T3>(string line, [RegexPattern] string pattern)
         {
             var m = Regex.Match(line, pattern);
+            if (m.Success == false)
+                throw new ArgumentException("Pattern does not match input line", nameof(pattern));
             return (
                 (T1)Convert.ChangeType(m.Groups[1].Value, typeof(T1)),
                 (T2)Convert.ChangeType(m.Groups[2].Value, typeof(T2)),

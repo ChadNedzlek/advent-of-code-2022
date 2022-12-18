@@ -96,15 +96,18 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
                 TryEnqueue((p.x, p.y, p.z - 1));
                 TryEnqueue((p.x, p.y, p.z + 1));
                 
-                while (unknown.Count > 0)
+                while (unknown.TryDequeue(out var check))
                 {
-                    var check = unknown.Dequeue();
-
                     bool? res = QuickCheck(check);
                     if (res.HasValue)
                     {
                         cache[check] = res.Value;
                         cache[p] = res.Value;
+                        while (unknown.TryDequeue(out check))
+                        {
+                            // Anything we were curious about is on the same inside/outside, so save them too
+                            cache[check] = res.Value;
+                        }
                         return res.Value;
                     }
 

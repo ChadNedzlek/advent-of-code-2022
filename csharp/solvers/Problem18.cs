@@ -12,51 +12,51 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
         protected override async Task ExecuteCoreAsync(IAsyncEnumerable<string> data)
         {
             var points = await Data.As<int, int, int>(data, @"(\d+),(\d+),(\d+)")
-                .Select<(int,int,int), (int x, int y, int z)>(a => a)
+                .Select(a => (IPoint3)a)
                 .ToHashSetAsync();
             Part1(points);
             Part2(points);
         }
 
-        private static void Part1(HashSet<(int x, int y, int z)> points)
+        private static void Part1(HashSet<IPoint3> points)
         {
             int total = 0;
             foreach (var p in points)
             {
-                if (!points.Contains((p.x - 1, p.y, p.z)))
+                if (!points.Contains((p.X - 1, p.Y, p.Z)))
                     total++;
-                if (!points.Contains((p.x + 1, p.y, p.z)))
+                if (!points.Contains((p.X + 1, p.Y, p.Z)))
                     total++;
-                if (!points.Contains((p.x, p.y - 1, p.z)))
+                if (!points.Contains((p.X, p.Y - 1, p.Z)))
                     total++;
-                if (!points.Contains((p.x, p.y + 1, p.z)))
+                if (!points.Contains((p.X, p.Y + 1, p.Z)))
                     total++;
-                if (!points.Contains((p.x, p.y, p.z - 1)))
+                if (!points.Contains((p.X, p.Y, p.Z - 1)))
                     total++;
-                if (!points.Contains((p.x, p.y, p.z + 1)))
+                if (!points.Contains((p.X, p.Y, p.Z + 1)))
                     total++;
             }
 
             Console.WriteLine($"Exposed any faces = {total}");
         }
         
-        private static void Part2(HashSet<(int x, int y, int z)> points)
+        private static void Part2(HashSet<IPoint3> points)
         {
             int total = 0;
 
-            var min = points.Aggregate((a, b) => (x: int.Min(a.x, b.x), y: int.Min(a.y, b.y), z: int.Min(a.z, b.z)));
-            var max = points.Aggregate((a, b) => (x: int.Max(a.x, b.x), y: int.Max(a.y, b.y), z: int.Max(a.z, b.z)));
+            var min = points.Aggregate((a, b) => (x: int.Min(a.X, b.X), y: int.Min(a.Y, b.Y), z: int.Min(a.Z, b.Z)));
+            var max = points.Aggregate((a, b) => (x: int.Max(a.X, b.X), y: int.Max(a.Y, b.Y), z: int.Max(a.Z, b.Z)));
 
-            Dictionary<(int x, int y, int z), bool> cache = new();
+            Dictionary<IPoint3, bool> cache = new();
 
-            bool Exterior((int x, int y, int z) p)
+            bool Exterior(IPoint3 p)
             {
                 if (points.Contains(p))
                     return false;
 
-                bool? QuickCheck((int x, int y, int z) p2)
+                bool? QuickCheck(IPoint3 p2)
                 {
-                    if (p2.x < min.x || p2.y < min.y || p2.z < min.z || p2.x > max.x || p2.y > max.y || p2.z > max.z)
+                    if (p2.X < min.X || p2.Y < min.Y || p2.Z < min.Z || p2.X > max.X || p2.Y > max.Y || p2.Z > max.Z)
                         return true;
 
                     if (cache.TryGetValue(p2, out var result))
@@ -65,15 +65,15 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
                     return null;
                 }
 
-                HashSet<(int x, int y, int z)> visited = new();
+                HashSet<IPoint3> visited = new();
 
                 var easyPeasy = QuickCheck(p);
                 if (easyPeasy.HasValue)
                     return easyPeasy.Value;
 
-                Queue<(int x, int y, int z)> unknown = new();
+                Queue<IPoint3> unknown = new();
 
-                void TryEnqueue((int x, int y, int z) q)
+                void TryEnqueue(IPoint3 q)
                 {
                     if (visited.Contains(q))
                     {
@@ -89,12 +89,12 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
                     unknown.Enqueue(q);
                 }
 
-                TryEnqueue((p.x - 1, p.y, p.z));
-                TryEnqueue((p.x + 1, p.y, p.z));
-                TryEnqueue((p.x, p.y - 1, p.z));
-                TryEnqueue((p.x, p.y + 1, p.z));
-                TryEnqueue((p.x, p.y, p.z - 1));
-                TryEnqueue((p.x, p.y, p.z + 1));
+                TryEnqueue((p.X - 1, p.Y, p.Z));
+                TryEnqueue((p.X + 1, p.Y, p.Z));
+                TryEnqueue((p.X, p.Y - 1, p.Z));
+                TryEnqueue((p.X, p.Y + 1, p.Z));
+                TryEnqueue((p.X, p.Y, p.Z - 1));
+                TryEnqueue((p.X, p.Y, p.Z + 1));
                 
                 while (unknown.TryDequeue(out var check))
                 {
@@ -111,12 +111,12 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
                         return res.Value;
                     }
 
-                    TryEnqueue((check.x - 1, check.y, check.z));
-                    TryEnqueue((check.x + 1, check.y, check.z));
-                    TryEnqueue((check.x, check.y - 1, check.z));
-                    TryEnqueue((check.x, check.y + 1, check.z));
-                    TryEnqueue((check.x, check.y, check.z - 1));
-                    TryEnqueue((check.x, check.y, check.z + 1));
+                    TryEnqueue((check.X - 1, check.Y, check.Z));
+                    TryEnqueue((check.X + 1, check.Y, check.Z));
+                    TryEnqueue((check.X, check.Y - 1, check.Z));
+                    TryEnqueue((check.X, check.Y + 1, check.Z));
+                    TryEnqueue((check.X, check.Y, check.Z - 1));
+                    TryEnqueue((check.X, check.Y, check.Z + 1));
                 }
                 cache.Add(p, false);
                 return false;
@@ -125,17 +125,17 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
 
             foreach (var p in points)
             {
-                if (Exterior((p.x - 1, p.y, p.z)))
+                if (Exterior((p.X - 1, p.Y, p.Z)))
                     total++;
-                if (Exterior((p.x + 1, p.y, p.z)))
+                if (Exterior((p.X + 1, p.Y, p.Z)))
                     total++;
-                if (Exterior((p.x, p.y - 1, p.z)))
+                if (Exterior((p.X, p.Y - 1, p.Z)))
                     total++;
-                if (Exterior((p.x, p.y + 1, p.z)))
+                if (Exterior((p.X, p.Y + 1, p.Z)))
                     total++;
-                if (Exterior((p.x, p.y, p.z - 1)))
+                if (Exterior((p.X, p.Y, p.Z - 1)))
                     total++;
-                if (Exterior((p.x, p.y, p.z + 1)))
+                if (Exterior((p.X, p.Y, p.Z + 1)))
                     total++;
             }
 

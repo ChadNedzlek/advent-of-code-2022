@@ -67,9 +67,9 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
 
                 HashSet<(int x, int y, int z)> visited = new();
 
-                var q = QuickCheck(p);
-                if (q.HasValue)
-                    return q.Value;
+                var easyPeasy = QuickCheck(p);
+                if (easyPeasy.HasValue)
+                    return easyPeasy.Value;
 
                 Queue<(int x, int y, int z)> unknown = new();
 

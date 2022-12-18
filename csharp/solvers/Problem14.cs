@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
 {
-    public class Problem14 : ProblemBase
+    public class Problem14 : AsyncProblemBase
     {
         protected override async Task ExecuteCoreAsync(IAsyncEnumerable<string> data)
         {

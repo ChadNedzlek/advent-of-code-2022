@@ -8,7 +8,7 @@ using Spectre.Console;
 
 namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
 {
-    public class Problem8 : ProblemBase
+    public class Problem8 : AsyncProblemBase
     {
         protected override async Task ExecuteCoreAsync(IAsyncEnumerable<string> data)
         {

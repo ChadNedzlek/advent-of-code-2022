@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
 {
-    public class Problem13 : ProblemBase
+    public class Problem13 : AsyncProblemBase
     {
         public abstract record Packet() : IComparable<Packet>
         {

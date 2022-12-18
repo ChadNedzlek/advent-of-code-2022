@@ -10,7 +10,7 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp
 {
     public static class Data
     {
-        public static async IAsyncEnumerable<string> GetData(int problem, string type = "real")
+        public static async IAsyncEnumerable<string> GetDataAsync(int problem, string type = "real")
         {
             StreamReader reader;
             if (type == "real")
@@ -44,6 +44,17 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp
         public static async IAsyncEnumerable<ValueTuple<T1, T2, T3>> As<T1, T2, T3>(
             IAsyncEnumerable<string> data,
             [RegexPattern] string pattern)
+        {
+            await foreach (string line in data)
+            {
+                yield return Parse<T1, T2, T3>(line, pattern);
+            }
+        }
+
+        public static async IAsyncEnumerable<TTyped> AsTyped<T1, T2, T3, TTyped>(
+            IAsyncEnumerable<string> data,
+            [RegexPattern] string pattern)
+            where TTyped : IConvertable<(T1, T2, T3), TTyped>
         {
             await foreach (string line in data)
             {

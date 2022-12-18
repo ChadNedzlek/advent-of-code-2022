@@ -6,7 +6,7 @@ using Spectre.Console;
 
 namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
 {
-    public class Problem1 : ProblemBase, IFancyProblem
+    public class Problem1 : AsyncProblemBase, IFancyAsyncProblem
     {
         protected override async Task ExecuteCoreAsync(IAsyncEnumerable<string> data)
         {

@@ -26,14 +26,14 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp
             };
 
             os.Parse(args);
-            Dictionary<int, ProblemBase> problems = new Dictionary<int, ProblemBase>();
+            Dictionary<int, IProblemBase> problems = new Dictionary<int, IProblemBase>();
 
             foreach (var type in Assembly.GetExecutingAssembly().GetTypes())
             {
                 var match = Regex.Match(type.Name, @"Problem(\d+)");
                 if (match.Success)
                 {
-                    problems.Add(int.Parse(match.Groups[1].Value), (ProblemBase)Activator.CreateInstance(type));
+                    problems.Add(int.Parse(match.Groups[1].Value), (IProblemBase)Activator.CreateInstance(type));
                 }
             }
 

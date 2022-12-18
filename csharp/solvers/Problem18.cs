@@ -7,12 +7,11 @@ using System.Threading.Tasks;
 
 namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
 {
-    public class Problem18 : ProblemBase
+    public class Problem18 : AsyncProblemBase
     {
         protected override async Task ExecuteCoreAsync(IAsyncEnumerable<string> data)
         {
-            var points = await Data.As<int, int, int>(data, @"(\d+),(\d+),(\d+)")
-                .Select(a => (IPoint3)a)
+            var points = await Data.AsTyped<int, int, int, IPoint3>(data, @"(\d+),(\d+),(\d+)")
                 .ToHashSetAsync();
             Part1(points);
             Part2(points);
@@ -67,7 +66,7 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
 
                 HashSet<IPoint3> visited = new();
 
-                var easyPeasy = QuickCheck(p);
+                bool? easyPeasy = QuickCheck(p);
                 if (easyPeasy.HasValue)
                     return easyPeasy.Value;
 

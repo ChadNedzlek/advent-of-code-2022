@@ -1,22 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
 namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
 {
-    public class Problem5 : ProblemBase
+    public class Problem5 : SyncProblemBase
     {
-        protected override async Task ExecuteCoreAsync(IAsyncEnumerable<string> data)
+        protected override void ExecuteCore(IEnumerable<string> data)
         {
             Dictionary<int, Stack<char>> stacks = new Dictionary<int, Stack<char>>();
-            var enumerator = data.GetAsyncEnumerator();
-            while (await enumerator.MoveNextAsync())
+            using var enumerator = data.GetEnumerator();
+            while (enumerator.MoveNext())
             {
                 string line = enumerator.Current;
                 if (!line.Contains('['))
                 {
-                    await enumerator.MoveNextAsync();
+                    enumerator.MoveNext();
                     break;
                 }
 
@@ -28,9 +29,10 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
                     var c = line[index];
                     if (char.IsLetter(c))
                     {
-                        if (!stacks.TryGetValue(i, out var stack))
+                        ref Stack<char> stack = ref CollectionsMarshal.GetValueRefOrAddDefault(stacks, i, out bool exists);
+                        if (!exists)
                         {
-                            stacks.Add(i, stack = new Stack<char>());
+                            stack = new Stack<char>();
                         }
                         stack.Push(c);
                     }
@@ -46,7 +48,7 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
             }
 
             List<string> instructions = new List<string>();
-            while (await enumerator.MoveNextAsync())
+            while (enumerator.MoveNext())
             {
                 instructions.Add(enumerator.Current);
             }

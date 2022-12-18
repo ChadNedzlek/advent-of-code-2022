@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
 {
-    public class Problem12 : ProblemBase
+    public class Problem12 : AsyncProblemBase
     {
         private record struct Coord(int Row, int Column)
         {
@@ -23,6 +24,7 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
         protected override async Task ExecuteCoreAsync(IAsyncEnumerable<string> data)
         {
             var list = await data.ToListAsync();
+            var s = Stopwatch.StartNew();
             int nRows = list.Count;
             int nCols = list[0].Length;
             int[,] heights = new int[nRows, nCols];
@@ -61,10 +63,10 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
                 {
                     if (o.Row < 0 || o.Row >= nRows || o.Column < 0 || o.Column >= nCols)
                         continue;
-                    var step = new CoordPath(o, path);
                     var jump = heights[head.Row, head.Column] - heights[o.Row, o.Column] ;
                     if (jump > 1)
                         continue;
+                    var step = new CoordPath(o, path);
                     if (distance[o.Row, o.Column] == -1 || distance[o.Row, o.Column] > step.Length)
                     {
                         distance[o.Row, o.Column] = step.Length;
@@ -88,6 +90,7 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
             }
 
             Console.WriteLine($"Best path is {bestPath.Length}");
+            Console.WriteLine(s.Elapsed);
             int trail = int.MaxValue;
             for (var i0 = 0; i0 < heights.GetLength(0); i0++)
             for (var i1 = 0; i1 < heights.GetLength(1); i1++)

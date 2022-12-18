@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
 {
-    public class Problem11 : ProblemBase
+    public class Problem11 : AsyncProblemBase
     {
         public class Monkey
         {

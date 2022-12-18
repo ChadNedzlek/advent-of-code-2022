@@ -8,12 +8,12 @@ using JetBrains.Annotations;
 
 namespace ChadNedzlek.AdventOfCode.Y2022.CSharp
 {
-    public record struct IPoint2(int X, int Y)
+    public record struct IPoint2(int X, int Y) : IConvertable<(int x,int y), IPoint2>
     {
         public static implicit operator IPoint2((int x, int y) p) => new IPoint2(p.x, p.y);
     }
 
-    public record struct IPoint3(int X, int Y, int Z)
+    public record struct IPoint3(int X, int Y, int Z) : IConvertable<(int x,int y, int z), IPoint3>
     {
         public static implicit operator IPoint3((int x, int y, int z) p) => new IPoint3(p.x, p.y, p.z);
     }
@@ -26,5 +26,10 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp
     public record struct LPoint3(long X, long Y, long Z)
     {
         public static implicit operator LPoint3((long x, long y, long z) p) => new LPoint3(p.x, p.y, p.z);
+    }
+
+    public interface IConvertable<T1, T2> where T2 : IConvertable<T1, T2>
+    {
+        static abstract implicit operator T2(T1 p);
     }
 }

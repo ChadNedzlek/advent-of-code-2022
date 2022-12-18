@@ -7,7 +7,7 @@ using Microsoft.Playwright;
 
 namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
 {
-    public class Problem15 : ProblemBase
+    public class Problem15 : AsyncProblemBase
     {
         protected override async Task ExecuteCoreAsync(IAsyncEnumerable<string> data)
         {

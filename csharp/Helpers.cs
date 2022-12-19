@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 
 namespace ChadNedzlek.AdventOfCode.Y2022.CSharp
@@ -66,6 +67,21 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp
             else
             {
                 dict.Add(key, add);
+            }
+        }
+        public static IImmutableDictionary<TKey, TValue> AddOrUpdate<TKey, TValue>(
+            this IImmutableDictionary<TKey, TValue> dict,
+            TKey key,
+            TValue add,
+            Func<TValue, TValue> update)
+        {
+            if (dict.TryGetValue(key, out var existing))
+            {
+                return dict.SetItem(key, update(existing));
+            }
+            else
+            {
+                return dict.Add(key, add);
             }
         }
         

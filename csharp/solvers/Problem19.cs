@@ -76,7 +76,7 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
         {
         }
 
-        public record FactoryState(Resource Production, Resource Stock, int Remaining, FactoryState Previous);
+        public record FactoryState(Resource Production, Resource Stock, int Remaining);
 
         protected override void ExecuteCore(IEnumerable<string> data)
         {
@@ -148,13 +148,13 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
                 return best;
             }
 
-            return Descend(new FactoryState(Resource.FromOre(1), new Resource(), 24, null));
+            return Descend(new FactoryState(Resource.FromOre(1), new Resource(), 24));
         }
 
         private static FactoryState SolveBluePrintIteratively(Blueprint blueprint, int remaining)
         {
             Queue<FactoryState> queue = new();
-            FactoryState bestState = new FactoryState(Resource.FromOre(1), new Resource(), remaining, null);
+            FactoryState bestState = new FactoryState(Resource.FromOre(1), new Resource(), remaining);
 
             Dictionary<(Resource Stock, Resource Produce), int> cache = new();
 
@@ -210,7 +210,7 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
                                 var spendResources = state with { Stock = state.Stock - r.Cost };
                                 var produce = StepState(spendResources);
                                 var addRobot = produce with { Production = produce.Production + r.Produce };
-                                TryEnqueue(addRobot with { Previous = state });
+                                TryEnqueue(addRobot);
 
                                 if (r.Produce.Geode != 0 || r.Produce.Obsidian != 0)
                                 {
@@ -220,7 +220,7 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
                         }
                     }
 
-                    TryEnqueue(StepState(state) with { Previous = state });
+                    TryEnqueue(StepState(state));
                 }
 
                 NextStates();

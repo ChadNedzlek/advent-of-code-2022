@@ -72,9 +72,7 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
 
         public record class Blueprint(int Id, IImmutableList<Robot> Robots);
 
-        public readonly record struct Robot(Resource Cost, Resource Produce)
-        {
-        }
+        public readonly record struct Robot(Resource Cost, Resource Produce);
 
         public record FactoryState(Resource Production, Resource Stock, int Remaining);
 
@@ -109,6 +107,15 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
                 Console.WriteLine($"Blueprint {blueprint.Id} produced {bestState.Stock}, for a quality level of {blueprint.Id * bestState.Stock.Geode}");
                 qualityLevel += blueprint.Id * bestState.Stock.Geode;
             }
+            Console.WriteLine($"Quality sum = {qualityLevel}");qualityLevel = 0;
+            
+            foreach (var blueprint in blueprints)
+            {
+                var bestState = SolveBlueprintDelegated(blueprint, 24);
+            
+                Console.WriteLine($"Blueprint {blueprint.Id} produced {bestState.Stock}, for a quality level of {blueprint.Id * bestState.Stock.Geode}");
+                qualityLevel += blueprint.Id * bestState.Stock.Geode;
+            }
             Console.WriteLine($"Quality sum = {qualityLevel}");
             
             qualityLevel = 1;
@@ -122,33 +129,79 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
                 qualityLevel *= bestState.Stock.Geode;
             }
             Console.WriteLine($"Super multiple sum = {qualityLevel} [{bigOne.Elapsed}]");
+            
+            qualityLevel = 1;
+            bigOne.Restart();
+            foreach (var blueprint in blueprints.Take(3))
+            {
+                Stopwatch littleOne = Stopwatch.StartNew();
+                var bestState = SolveBlueprintDelegated(blueprint, 32);
+
+                Console.WriteLine($"Blueprint {blueprint.Id} produced {bestState.Stock}, for a quality level of {blueprint.Id * bestState.Stock.Geode} [{littleOne.Elapsed}]");
+                qualityLevel *= bestState.Stock.Geode;
+            }
+            Console.WriteLine($"Super multiple sum = {qualityLevel} [{bigOne.Elapsed}]");
         }
 
-        private static FactoryState SolveBluePrintRecursively(Blueprint blueprint)
+        private FactoryState SolveBlueprintDelegated(Blueprint blueprint, int duration)
         {
-            FactoryState Descend(FactoryState state)
-            {
-                if (state.Remaining == 0)
-                    return state;
+            var maxCosts = blueprint.Robots.Select(r => r.Cost)
+                .Aggregate(
+                    (a, b) => new Resource(
+                        short.Max(a.Ore, b.Ore),
+                        short.Max(a.Clay, b.Clay),
+                        short.Max(a.Obsidian, b.Obsidian),
+                        short.Max(a.Geode, b.Geode)
+                    )
+                );
 
-                var best = Descend(StepState(state));
-                foreach (var robot in blueprint.Robots)
+            IList<FactoryState> NextStates(FactoryState state)
+            {
+                ImmutableList<FactoryState> list = ImmutableList<FactoryState>.Empty;
+                if (state.Remaining == 0)
+                    return list;
+                if (state.Remaining >= 1)
                 {
-                    if (robot.Cost <= state.Stock)
+                    foreach (var r in blueprint.Robots.Reverse())
                     {
-                        var spendResources = state with { Stock = state.Stock - robot.Cost };
-                        var produce = StepState(spendResources);
-                        var addRobot = produce with { Production = produce.Production + robot.Produce };
-                        var child = Descend(addRobot);
-                        if (child.Stock.Geode > best.Stock.Geode)
-                            best = child;
+                        if (state.Stock >= r.Cost)
+                        {
+                            if (r.Produce.Ore != 0 && maxCosts.Ore <= state.Production.Ore)
+                                // We are already producing ore faster than we can ever consume it, there is no point in making more
+                                continue;
+                            if (r.Produce.Clay != 0 && maxCosts.Clay <= state.Production.Clay)
+                                // We are already producing ore faster than we can ever consume it, there is no point in making more
+                                continue;
+                            if (r.Produce.Obsidian != 0 && maxCosts.Obsidian <= state.Production.Obsidian)
+                                // We are already producing ore faster than we can ever consume it, there is no point in making more
+                                continue;
+
+                            var spendResources = state with { Stock = state.Stock - r.Cost };
+                            var produce = StepState(spendResources);
+                            var addRobot = produce with { Production = produce.Production + r.Produce };
+                            list = list.Add(addRobot);
+
+                            if (r.Produce.Geode != 0 || r.Produce.Obsidian != 0)
+                            {
+                                return list;
+                            }
+                        }
                     }
                 }
 
-                return best;
+                list = list.Add(StepState(state));
+
+                return list;
             }
 
-            return Descend(new FactoryState(Resource.FromOre(1), new Resource(), 24));
+            return Algorithms.BreadthFirstSearch(
+                new FactoryState(Resource.FromOre(1), new Resource(), duration),
+                NextStates,
+                (a, b) => a.Stock.Geode > b.Stock.Geode,
+                s => (s.Stock, s.Production),
+                s => s.Remaining,
+                (a, b) => a > b
+            );
         }
 
         private static FactoryState SolveBluePrintIteratively(Blueprint blueprint, int remaining)

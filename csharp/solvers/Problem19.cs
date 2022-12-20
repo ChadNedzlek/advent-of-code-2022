@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
-using System.Reflection.Metadata.Ecma335;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 
 namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
 {
-    public class Problem19 : SyncProblemBase
+    public class Problem19 : AsyncProblemBase
     {
         public record struct Resource(short Ore = 0, short Clay = 0, short Obsidian = 0, short Geode = 0) : IComparable<Resource>
         {
@@ -76,10 +76,10 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
 
         public record FactoryState(Resource Production, Resource Stock, int Remaining);
 
-        protected override void ExecuteCore(IEnumerable<string> data)
+        protected override async Task ExecuteCoreAsync(IAsyncEnumerable<string> data)
         {
             List<Blueprint> blueprints = new();
-            foreach (var line in data)
+            await foreach (var line in data)
             {
                 int id = Data.Parse<int>(line, @"Blueprint (\d+):");
                 byte oreOreCost = Data.Parse<byte>(line, @"Each ore robot costs (\d+) ore\.");
@@ -111,7 +111,7 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
             
             foreach (var blueprint in blueprints)
             {
-                var bestState = SolveBlueprintDelegated(blueprint, 24);
+                var bestState = await SolveBlueprintDelegated(blueprint, 24);
             
                 Console.WriteLine($"Blueprint {blueprint.Id} produced {bestState.Stock}, for a quality level of {blueprint.Id * bestState.Stock.Geode}");
                 qualityLevel += blueprint.Id * bestState.Stock.Geode;
@@ -135,7 +135,7 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
             foreach (var blueprint in blueprints.Take(3))
             {
                 Stopwatch littleOne = Stopwatch.StartNew();
-                var bestState = SolveBlueprintDelegated(blueprint, 32);
+                var bestState = await SolveBlueprintDelegated(blueprint, 32);
 
                 Console.WriteLine($"Blueprint {blueprint.Id} produced {bestState.Stock}, for a quality level of {blueprint.Id * bestState.Stock.Geode} [{littleOne.Elapsed}]");
                 qualityLevel *= bestState.Stock.Geode;
@@ -143,7 +143,7 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
             Console.WriteLine($"Super multiple sum = {qualityLevel} [{bigOne.Elapsed}]");
         }
 
-        private FactoryState SolveBlueprintDelegated(Blueprint blueprint, int duration)
+        private async Task<FactoryState> SolveBlueprintDelegated(Blueprint blueprint, int duration)
         {
             var maxCosts = blueprint.Robots.Select(r => r.Cost)
                 .Aggregate(
@@ -194,7 +194,7 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
                 return list;
             }
 
-            return Algorithms.BreadthFirstSearch(
+            return await Algorithms.BreadthFirstSearchAsync(
                 new FactoryState(Resource.FromOre(1), new Resource(), duration),
                 NextStates,
                 (a, b) => a.Stock.Geode > b.Stock.Geode,

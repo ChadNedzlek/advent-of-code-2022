@@ -1,10 +1,15 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Channels;
+using System.Threading.Tasks;
 
 namespace ChadNedzlek.AdventOfCode.Y2022.CSharp;
 
-public class Algorithms
+public abstract class Algorithms
 {
     public static TState BreadthFirstSearch<TState, TIdentity, TScore>(TState initial,
         Func<TState, IList<TState>> nextStates,
@@ -49,6 +54,92 @@ public class Algorithms
                 }
 
                 queue.Enqueue(n);
+            }
+        }
+
+        return best;
+    }
+    
+    public static async Task<TState> BreadthFirstSearchAsync<TState, TIdentity, TScore>(TState initial,
+        Func<TState, IList<TState>> nextStates,
+        Func<TState, TState, bool> isBetterState,
+        Func<TState, TIdentity> getIdentity,
+        Func<TState, TScore> getScore,
+        Func<TScore, TScore, bool> isBetterScore)
+    where TScore : IEquatable<TScore>
+    {
+        Channel<TState> channel = Channel.CreateUnbounded<TState>();
+        ConcurrentDictionary<TIdentity, TScore> loopbackDetection = new();
+        TState best = initial;
+        await channel.Writer.WriteAsync(initial);
+        int parallelism = Environment.ProcessorCount;
+        int executing = 0;
+        object bestLock = new object();
+        await Task.WhenAll(Enumerable.Repeat(0, parallelism).Select(_ => Task.Run(Run)));
+        async Task Run() {
+            while (true)
+            {
+                if (!await channel.Reader.WaitToReadAsync())
+                {
+                    return;
+                }
+
+                Interlocked.Increment(ref executing);
+                if (!channel.Reader.TryRead(out var state))
+                {
+                    Interlocked.Decrement(ref executing);
+                    continue;
+                }
+
+                if (isBetterState(state, best))
+                {
+                    lock (bestLock)
+                    {
+                        if (isBetterState(state, best))
+                        {
+                            best = state;
+                        }
+                    }
+                }
+
+                var next = nextStates(state);
+                bool inserted = false;
+                foreach (var n in next)
+                {
+                    if (getIdentity != null)
+                    {
+                        var stateId = getIdentity(n);
+                        var score = getScore(n);
+                        var addedScore = loopbackDetection.GetOrAdd(stateId, score);
+                        if (!addedScore.Equals(score))
+                        {
+                            if (!isBetterScore(score, addedScore))
+                            {
+                                // We already had one, and it was already as good as or better
+                                continue;
+                            }
+
+                        }
+                    }
+
+                    inserted = true;
+                    await channel.Writer.WriteAsync(n);
+                }
+
+                var currentlyExecuting = Interlocked.Decrement(ref executing);
+
+                if (!inserted)
+                {
+                    if (currentlyExecuting == 0)
+                    {
+                        if (channel.Reader.Count == 0)
+                        {
+                            // I'm not adding anything, there isn't anything left, and everyone else is waiting
+                            channel.Writer.TryComplete();
+                            return;
+                        }
+                    }
+                }
             }
         }
 

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -61,89 +62,81 @@ public abstract class Algorithms
     }
     
     public static async Task<TState> BreadthFirstSearchAsync<TState, TIdentity, TScore>(TState initial,
-        Func<TState, IList<TState>> nextStates,
+        Action<TState, Action<TState>> nextStates,
         Func<TState, TState, bool> isBetterState,
         Func<TState, TIdentity> getIdentity,
         Func<TState, TScore> getScore,
         Func<TScore, TScore, bool> isBetterScore)
-    where TScore : IEquatable<TScore>
+    where TScore : IEquatable<TScore> where TState : class
     {
         Channel<TState> channel = Channel.CreateUnbounded<TState>();
         ConcurrentDictionary<TIdentity, TScore> loopbackDetection = new();
-        TState best = initial;
+        
         await channel.Writer.WriteAsync(initial);
         int parallelism = Environment.ProcessorCount;
-        int executing = 0;
-        object bestLock = new object();
-        await Task.WhenAll(Enumerable.Repeat(0, parallelism).Select(_ => Task.Run(Run)));
-        async Task Run() {
+        int executing = parallelism;
+        var subResults = await Task.WhenAll(Enumerable.Repeat(0, parallelism).Select(_ => Task.Run(Run)));
+        return subResults.Aggregate((a,b) => isBetterState(a,b) ? a : b);
+        
+        void AddState(TState n)
+        {
+            if (getIdentity != null)
+            {
+                var stateId = getIdentity(n);
+                var score = getScore(n);
+                if (!loopbackDetection.TryAdd(stateId, score))
+                {
+                    // This will always succeed, because it's an add-only dictionary, so discard the return
+                    loopbackDetection.TryGetValue(stateId, out var existingScore);
+                    if (!isBetterScore(score, existingScore))
+                    {
+                        // We already had one, and it was already as good as or better
+                        return;
+                    }
+                }
+            }
+
+            // Since the channel is unbounded, this will always succeed
+            channel.Writer.TryWrite(n);
+        }
+        
+        async Task<TState> Run() {
+            TState best = initial;
             while (true)
             {
-                if (!await channel.Reader.WaitToReadAsync())
+                TState state;
+                while (!channel.Reader.TryRead(out state))
                 {
-                    return;
-                }
+                    // There is nothing to read for some reason, we need to mark ourselves as not executing
+                    var cx = Interlocked.Decrement(ref executing);
+                    
+                    // If we are the last person (because the counter is zero), that means all threads are waiting
+                    if (cx == 0)
+                    {
+                        Debug.Assert(channel.Reader.Count == 0);
+                        channel.Writer.TryComplete();
+                        return best;
+                    }
 
-                Interlocked.Increment(ref executing);
-                if (!channel.Reader.TryRead(out var state))
-                {
-                    Interlocked.Decrement(ref executing);
-                    continue;
+                    // We weren't the last, wait for either more data, or the channel to close
+                    if (!await channel.Reader.WaitToReadAsync())
+                    {
+                        // The channel was closed, time to go
+                        return best;
+                    }
+
+                    // We are not waiting anymore, reenter the executing state
+                    Interlocked.Increment(ref executing);
                 }
 
                 if (isBetterState(state, best))
                 {
-                    lock (bestLock)
-                    {
-                        if (isBetterState(state, best))
-                        {
-                            best = state;
-                        }
-                    }
+                    best = state;
                 }
 
-                var next = nextStates(state);
-                bool inserted = false;
-                foreach (var n in next)
-                {
-                    if (getIdentity != null)
-                    {
-                        var stateId = getIdentity(n);
-                        var score = getScore(n);
-                        var addedScore = loopbackDetection.GetOrAdd(stateId, score);
-                        if (!addedScore.Equals(score))
-                        {
-                            if (!isBetterScore(score, addedScore))
-                            {
-                                // We already had one, and it was already as good as or better
-                                continue;
-                            }
-
-                        }
-                    }
-
-                    inserted = true;
-                    await channel.Writer.WriteAsync(n);
-                }
-
-                var currentlyExecuting = Interlocked.Decrement(ref executing);
-
-                if (!inserted)
-                {
-                    if (currentlyExecuting == 0)
-                    {
-                        if (channel.Reader.Count == 0)
-                        {
-                            // I'm not adding anything, there isn't anything left, and everyone else is waiting
-                            channel.Writer.TryComplete();
-                            return;
-                        }
-                    }
-                }
+                nextStates(state, AddState);
             }
         }
-
-        return best;
     }
     
     public static TState BreadthFirstSearch<TState, TIdentity, TScore>(TState initial,

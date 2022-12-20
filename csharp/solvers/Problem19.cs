@@ -155,11 +155,10 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
                     )
                 );
 
-            IList<FactoryState> NextStates(FactoryState state)
+            void NextStates(FactoryState state, Action<FactoryState> addState)
             {
-                ImmutableList<FactoryState> list = ImmutableList<FactoryState>.Empty;
                 if (state.Remaining == 0)
-                    return list;
+                    return;
                 if (state.Remaining >= 1)
                 {
                     foreach (var r in blueprint.Robots.Reverse())
@@ -179,19 +178,17 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
                             var spendResources = state with { Stock = state.Stock - r.Cost };
                             var produce = StepState(spendResources);
                             var addRobot = produce with { Production = produce.Production + r.Produce };
-                            list = list.Add(addRobot);
+                            addState(addRobot);
 
                             if (r.Produce.Geode != 0 || r.Produce.Obsidian != 0)
                             {
-                                return list;
+                                return;
                             }
                         }
                     }
                 }
 
-                list = list.Add(StepState(state));
-
-                return list;
+                addState(StepState(state));
             }
 
             return await Algorithms.BreadthFirstSearchAsync(

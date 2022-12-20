@@ -12,6 +12,21 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp;
 
 public abstract class Algorithms
 {
+    public class QueueReadySignal
+    {
+        private volatile TaskCompletionSource<bool> _source = new TaskCompletionSource<bool>();
+
+        public Task<bool> WaitAsync() { return _source.Task; }
+
+        public void Set(bool result)
+        {
+            if (_source.Task.IsCompleted)
+                return;
+            var old = Interlocked.Exchange(ref _source, new TaskCompletionSource<bool>());
+            old.TrySetResult(result);
+        }
+    }
+    
     public static TState BreadthFirstSearch<TState, TIdentity, TScore>(TState initial,
         Func<TState, IList<TState>> nextStates,
         Func<TState, TState, bool> isBetterState,
@@ -67,59 +82,52 @@ public abstract class Algorithms
         Func<TState, TIdentity> getIdentity,
         Func<TState, TScore> getScore,
         Func<TScore, TScore, bool> isBetterScore)
-    where TScore : IEquatable<TScore> where TState : class
     {
-        Channel<TState> channel = Channel.CreateUnbounded<TState>();
-        ConcurrentDictionary<TIdentity, TScore> loopbackDetection = new();
+        Queue<TState> queue = new();
+        bool done = false;
+        Dictionary<TIdentity, TScore> loopbackDetection = new();
+        QueueReadySignal needEvent = new ();
         
-        await channel.Writer.WriteAsync(initial);
+        queue.Enqueue(initial);
         int parallelism = Environment.ProcessorCount;
         int executing = parallelism;
         var subResults = await Task.WhenAll(Enumerable.Repeat(0, parallelism).Select(_ => Task.Run(Run)));
         return subResults.Aggregate((a,b) => isBetterState(a,b) ? a : b);
-        
-        void AddState(TState n)
-        {
-            if (getIdentity != null)
-            {
-                var stateId = getIdentity(n);
-                var score = getScore(n);
-                if (!loopbackDetection.TryAdd(stateId, score))
-                {
-                    // This will always succeed, because it's an add-only dictionary, so discard the return
-                    loopbackDetection.TryGetValue(stateId, out var existingScore);
-                    if (!isBetterScore(score, existingScore))
-                    {
-                        // We already had one, and it was already as good as or better
-                        return;
-                    }
-                }
-            }
 
-            // Since the channel is unbounded, this will always succeed
-            channel.Writer.TryWrite(n);
-        }
-        
-        async Task<TState> Run() {
+        async Task<TState> Run()
+        {
             TState best = initial;
+            List<TState> batch = new List<TState>(1000);
+            List<TState> next = new List<TState>(1000);
             while (true)
             {
-                TState state;
-                while (!channel.Reader.TryRead(out state))
+                batch.Clear();
+                lock (queue)
                 {
+                    while (batch.Count < batch.Capacity && queue.TryDequeue(out var s))
+                    {
+                        batch.Add(s);
+                    }
+                }
+
+                if (batch.Count == 0)
+                {
+                    if (done)
+                        return best;
+
                     // There is nothing to read for some reason, we need to mark ourselves as not executing
                     var cx = Interlocked.Decrement(ref executing);
-                    
+
                     // If we are the last person (because the counter is zero), that means all threads are waiting
                     if (cx == 0)
                     {
-                        Debug.Assert(channel.Reader.Count == 0);
-                        channel.Writer.TryComplete();
+                        done = true;
+                        needEvent.Set(false);
                         return best;
                     }
 
                     // We weren't the last, wait for either more data, or the channel to close
-                    if (!await channel.Reader.WaitToReadAsync())
+                    if (!await needEvent.WaitAsync())
                     {
                         // The channel was closed, time to go
                         return best;
@@ -129,12 +137,60 @@ public abstract class Algorithms
                     Interlocked.Increment(ref executing);
                 }
 
-                if (isBetterState(state, best))
+                next.Clear();
+                foreach (var state in batch)
                 {
-                    best = state;
+                    if (isBetterState(state, best))
+                    {
+                        best = state;
+                    }
+
+                    nextStates(state, next.Add);
+                }
+                batch.Clear();
+
+                if (getIdentity != null)
+                {
+                    var idScore = next.Select(s => (state: s, id: getIdentity(s), score: getScore(s)));
+                    lock (loopbackDetection)
+                    {
+                        void FilterStates()
+                        {
+                            foreach (var (state, stateId, score) in idScore)
+                            {
+                                ref var loopbackEntry = ref CollectionsMarshal.GetValueRefOrAddDefault(
+                                    loopbackDetection,
+                                    stateId,
+                                    out bool exists
+                                );
+                                
+                                if (exists)
+                                {
+                                    if (!isBetterScore(score, loopbackEntry))
+                                    {
+                                        // We already had one, and it was already as good as or better
+                                        continue;
+                                    }
+                                }
+
+                                loopbackEntry = score;
+                                batch.Add(state);
+                            }
+                        }
+
+                        FilterStates();
+                        (next, batch) = (batch, next);
+                    }
                 }
 
-                nextStates(state, AddState);
+
+                lock (queue)
+                {
+                    foreach (var n in next)
+                    {
+                        queue.Enqueue(n);
+                    }
+                }
             }
         }
     }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -75,7 +76,46 @@ public abstract class Algorithms
 
         return best;
     }
-    
+
+    public class Blist<T> : IEnumerable<T>
+    {
+        private int _size = 0;
+        private List<T> _array;
+        public int Count => _size;
+
+        public Blist(int size)
+        {
+            _array = new List<T>(size);
+        }
+
+        public void Add(T item)
+        {
+            if (_size < _array.Count)
+            {
+                _array[_size++] = item;
+                return;
+            }
+
+            _array.Add(item);
+            _size = _array.Count;
+        }
+
+        public void Clear()
+        {
+            _size = 0;
+        }
+
+        public IEnumerator<T> GetEnumerator()
+        {
+            return _array.Take(_size).GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
+    }
+
     public static async Task<TState> BreadthFirstSearchAsync<TState, TIdentity, TScore>(TState initial,
         Action<TState, Action<TState>> nextStates,
         Func<TState, TState, bool> isBetterState,
@@ -83,9 +123,10 @@ public abstract class Algorithms
         Func<TState, TScore> getScore,
         Func<TScore, TScore, bool> isBetterScore)
     {
+        const int batchSize = 2000;
         Queue<TState> queue = new();
         bool done = false;
-        Dictionary<TIdentity, TScore> loopbackDetection = new();
+        Dictionary<TIdentity, TScore> loopbackDetection = new(1_000_000);
         QueueReadySignal needEvent = new ();
         
         queue.Enqueue(initial);
@@ -97,14 +138,14 @@ public abstract class Algorithms
         async Task<TState> Run()
         {
             TState best = initial;
-            List<TState> batch = new List<TState>(1000);
-            List<TState> next = new List<TState>(1000);
+            List<TState> batch = new (batchSize);
+            List<TState> next = new (batchSize);
             while (true)
             {
                 batch.Clear();
                 lock (queue)
                 {
-                    while (batch.Count < batch.Capacity && queue.TryDequeue(out var s))
+                    while (batch.Count < batchSize && queue.TryDequeue(out var s))
                     {
                         batch.Add(s);
                     }

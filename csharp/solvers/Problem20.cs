@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
 {
-    public class PXroblem20 : SyncProblemBase
+    public class Problem20 : SyncProblemBase
     {
         protected override void ExecuteCore(IEnumerable<string> data)
         {

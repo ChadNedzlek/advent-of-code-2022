@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
 {
-    public class Problem7 : AsyncProblemBase
+    public class Problem07 : AsyncProblemBase
     {
         private class DirNode
         {

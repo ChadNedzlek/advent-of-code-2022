@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
 {
-    public class Problem5 : SyncProblemBase
+    public class Problem05 : SyncProblemBase
     {
         protected override void ExecuteCore(IEnumerable<string> data)
         {

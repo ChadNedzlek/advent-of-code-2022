@@ -41,6 +41,8 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
                 return Name;
             }
         }
+        
+        
 
         private record class FileNode(string Name, int Size);
 

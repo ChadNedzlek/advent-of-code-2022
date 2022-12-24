@@ -28,8 +28,57 @@ public abstract class Algorithms
         }
     }
     
+    public static TState PrioritySearch<TState, TPriority, TIdentity, TScore>(TState initial,
+        Func<TState, IEnumerable<TState>> nextStates,
+        Func<TState, bool> isEndState,
+        Func<TState, TPriority> getPriority,
+        Func<TState, TIdentity> getIdentity,
+        Func<TState, TScore> getScore,
+        Func<TScore, TScore, bool> isBetterScore)
+    {
+        PriorityQueue<TState, TPriority> queue = new();
+        Dictionary<TIdentity, TScore> loopbackDetection = new();
+        queue.Enqueue(initial, getPriority(initial));
+        while (queue.TryDequeue(out var state, out var p))
+        {
+            if (isEndState(state))
+                return state;
+
+            var next = nextStates(state);
+
+            foreach (var n in next)
+            {
+                if (getIdentity != null)
+                {
+                    var stateId = getIdentity(n);
+                    ref var loopbackEntry = ref CollectionsMarshal.GetValueRefOrAddDefault(
+                        loopbackDetection,
+                        stateId,
+                        out bool exists
+                    );
+                    var score = getScore(n);
+                    if (exists)
+                    {
+                        if (!isBetterScore(score, loopbackEntry))
+                        {
+                            // We already had one, and it was already as good as or better
+                            continue;
+                        }
+
+                    }
+
+                    loopbackEntry = score;
+                }
+
+                queue.Enqueue(n, getPriority(n));
+            }
+        }
+
+        return default;
+    }
+    
     public static TState BreadthFirstSearch<TState, TIdentity, TScore>(TState initial,
-        Func<TState, IList<TState>> nextStates,
+        Func<TState, IEnumerable<TState>> nextStates,
         Func<TState, TState, bool> isBetterState,
         Func<TState, TIdentity> getIdentity,
         Func<TState, TScore> getScore,

@@ -16,7 +16,7 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
         {
             char[][] map = data.TakeWhile(l => !string.IsNullOrEmpty(l)).Select(l => l.ToArray()).ToArray();
             var instructions = data.Last();
-            var coord = new IPoint2(Array.IndexOf(map[0], '.'), 0);
+            var coord = new Point2I(Array.IndexOf(map[0], '.'), 0);
             int dx = 1, dy = 0;
 
             int move = 0;
@@ -117,7 +117,7 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
                     }
                 }
 
-                coord = new IPoint2(x, y);
+                coord = new Point2I(x, y);
                 move = 0;
             }
 
@@ -142,7 +142,7 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
             char[][] map = data.TakeWhile(l => !string.IsNullOrEmpty(l)).Select(l => l.ToArray()).ToArray();
             int faceSize = map.Length > 50 ? 50 : 4;
             var instructions = data.Last();
-            var coord = new IPoint2(Array.IndexOf(map[0], '.'), 0);
+            var coord = new Point2I(Array.IndexOf(map[0], '.'), 0);
             int dx = 1, dy = 0;
 
             int move = 0;
@@ -333,7 +333,7 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
                     }
                 }
 
-                coord = new IPoint2(x, y);
+                coord = new Point2I(x, y);
                 //RenderMap();
                 move = 0;
             }

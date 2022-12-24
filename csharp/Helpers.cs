@@ -54,6 +54,26 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp
             return Enumerable.Range(start, count);
         }
 
+        public static int PosMod(this int x, int q) => (x % q + q) % q;
+        
+        public static int Gcd(int num1, int num2)
+        {
+            while (num1 != num2)
+            {
+                if (num1 > num2)
+                    num1 = num1 - num2;
+ 
+                if (num2 > num1)
+                    num2 = num2 - num1;
+            }
+            return num1;
+        }
+  
+        public static int Lcm(int num1, int num2)
+        {
+            return (num1 * num2) / Gcd(num1, num2);
+        }
+
         public static void AddOrUpdate<TKey, TValue>(
             this IDictionary<TKey, TValue> dict,
             TKey key,

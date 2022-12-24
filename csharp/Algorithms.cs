@@ -170,9 +170,9 @@ public abstract class Algorithms
         Func<TState, TState, bool> isBetterState,
         Func<TState, TIdentity> getIdentity,
         Func<TState, TScore> getScore,
-        Func<TScore, TScore, bool> isBetterScore)
+        Func<TScore, TScore, bool> isBetterScore,
+        int batchSize = 2000)
     {
-        const int batchSize = 2000;
         Queue<TState> queue = new();
         bool done = false;
         Dictionary<TIdentity, TScore> loopbackDetection = new(1_000_000);

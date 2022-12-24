@@ -11,13 +11,13 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
     {
         protected override async Task ExecuteCoreAsync(IAsyncEnumerable<string> data)
         {
-            var points = await Data.AsTyped<int, int, int, IPoint3>(data, @"(\d+),(\d+),(\d+)")
+            var points = await Data.AsTyped<int, int, int, Point3<int>>(data, @"(\d+),(\d+),(\d+)")
                 .ToHashSetAsync();
             Part1(points);
             Part2(points);
         }
 
-        private static void Part1(HashSet<IPoint3> points)
+        private static void Part1(HashSet<Point3<int>> points)
         {
             int total = 0;
             foreach (var p in points)
@@ -39,21 +39,21 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
             Console.WriteLine($"Exposed any faces = {total}");
         }
         
-        private static void Part2(HashSet<IPoint3> points)
+        private static void Part2(HashSet<Point3<int>> points)
         {
             int total = 0;
 
             var min = points.Aggregate((a, b) => (x: int.Min(a.X, b.X), y: int.Min(a.Y, b.Y), z: int.Min(a.Z, b.Z)));
             var max = points.Aggregate((a, b) => (x: int.Max(a.X, b.X), y: int.Max(a.Y, b.Y), z: int.Max(a.Z, b.Z)));
 
-            Dictionary<IPoint3, bool> cache = new();
+            Dictionary<Point3<int>, bool> cache = new();
 
-            bool Exterior(IPoint3 p)
+            bool Exterior(Point3<int> p)
             {
                 if (points.Contains(p))
                     return false;
 
-                bool? QuickCheck(IPoint3 p2)
+                bool? QuickCheck(Point3<int> p2)
                 {
                     if (p2.X < min.X || p2.Y < min.Y || p2.Z < min.Z || p2.X > max.X || p2.Y > max.Y || p2.Z > max.Z)
                         return true;
@@ -64,15 +64,15 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
                     return null;
                 }
 
-                HashSet<IPoint3> visited = new();
+                HashSet<Point3<int>> visited = new();
 
                 bool? easyPeasy = QuickCheck(p);
                 if (easyPeasy.HasValue)
                     return easyPeasy.Value;
 
-                Queue<IPoint3> unknown = new();
+                Queue<Point3<int>> unknown = new();
 
-                void TryEnqueue(IPoint3 q)
+                void TryEnqueue(Point3<int> q)
                 {
                     if (visited.Contains(q))
                     {

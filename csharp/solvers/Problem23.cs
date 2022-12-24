@@ -152,14 +152,14 @@ namespace ChadNedzlek.AdventOfCode.Y2022.CSharp.solvers
             Helpers.VerboseLine($"== Final ==");
             Render(false);
 
-            Rect2I bounds = new Rect2I(int.MaxValue, Int32.MaxValue, int.MinValue, int.MinValue);
+            Rect2<int> bounds = new  Rect2<int>(int.MaxValue, Int32.MaxValue, int.MinValue, int.MinValue);
             
             for (var r = elf.GetLowerBound(0); r <= elf.GetUpperBound(0); r++)
             for (var c = elf.GetLowerBound(1); c <= elf.GetUpperBound(1); c++)
             {
                 if (elf[r, c])
                 {
-                    bounds = new Rect2I(
+                    bounds = new  Rect2<int>(
                         Left: int.Min(bounds.Left, c),
                         Top: int.Min(bounds.Top, r),
                         Right: int.Max(bounds.Right, c),
